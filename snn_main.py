@@ -1,7 +1,7 @@
 # simplex_main2.py
 import random
-from simplex_objects2 import *
-from simplex_operations2 import *
+from snn_objects import *
+from snn_operations import *
 import numpy as np
 
 model = Network(2,10,1)
