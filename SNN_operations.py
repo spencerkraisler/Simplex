@@ -3,6 +3,7 @@ import numpy as np
 from scipy import linalg
 import math
 
+# contains sigmoid and tanh and their derivatives
 def activate(x, function, prime = False):
 	if function == 'sigmoid':
 		if prime == False:
@@ -15,6 +16,7 @@ def activate(x, function, prime = False):
 		else:
 			return 1 - x ** 2
 
+# accepts a matrix and runs every element through the activation function
 def activateMatrix(X, function, prime = False):
 	for i in range(X.shape[0]):
 		for j in range(X.shape[1]):
@@ -28,6 +30,7 @@ def appendBias(node_matrix, bias):
 	node_matrix = np.array(node_matrix)
 	return node_matrix
 
+# takes a layer and returns a column matrix of the node values, including bias node
 def getNodeMatrix(layer):
 	network = layer.network
 	node_matrix = []
@@ -43,6 +46,7 @@ def getNodeMatrix(layer):
 		node_matrix = node_matrix.T
 	return node_matrix
 
+# takes a layer and returns a matrix of parent weights
 def getWeightMatrix(layer):
 	weight_matrix = []
 	for i in range(layer.dim):
@@ -50,6 +54,9 @@ def getWeightMatrix(layer):
 	weight_matrix = np.array(weight_matrix)
 	return weight_matrix
 
+# regular propagation: takes a matrix of input values and returns
+# the neural network output in the form of a matrix
+# updates node values
 def forward(network, input_matrix):
 	network.layers[0].updateNodeValues(input_matrix)
 	bias = network.layers[0].nodes[network.layers[0].dim].value
@@ -66,8 +73,10 @@ def forward(network, input_matrix):
 	return next_node_matrix
 
 
-###
+### back propagation stuff
+# these functions seem redundant but they make the get_delError_delWeight method look cleaner
 
+# takes a node and returns the dericatives of the output w.r.t. the net input
 def get_delOut_delNet(node):
 	function = node.activation
 	value = node.value
@@ -77,7 +86,7 @@ def get_delOut_delNet(node):
 def get_delNet_delOut(node, parent_node):
 	return node.parent_weights[parent_node.node_index].value
 
-# returns the change in net input of a node w.r.t. change in weight value
+# returns the change in net input of a node w.r.t. change in parent weight value
 def get_delNet_delWeight(weight):
 	return weight.parent_node.value
 
@@ -97,21 +106,27 @@ def get_delError_delWeight(weight, output_node, target_value):
 		del_error *= get_delNet_delWeight(weight)
 	return del_error
 
-
+# back propagation method (this is made for 3 layer networks)
 def backpass(network, target_values, learning_rate):
+	# output layer weights
 	for i in range(network.layers[2].dim):
 		output_node = network.layers[2].nodes[i]
 		for j in range(len(output_node.parent_weights)):
 			weight = output_node.parent_weights[j]
 			del_weight = get_delError_delWeight(weight, output_node, target_values[i][0])
+
 			weight.value += del_weight * learning_rate
+			
 	for i in range(network.layers[1].dim):
 		node = network.layers[1].nodes[i]
 		for j in range(len(node.parent_weights)):
 			weight = node.parent_weights[j]
+			
+			# dE/dNode = dE0/dNode + dE1/dNode + ... for every output node
 			del_weight = 0
 			for k in range(network.layers[2].dim):
 				del_weight += get_delError_delWeight(weight, network.layers[2].nodes[k], target_values[k][0])
+			
 			weight.value = del_weight * learning_rate
 
 
