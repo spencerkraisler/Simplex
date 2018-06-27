@@ -1,7 +1,10 @@
 from SNN_objects import * 
 from SNN_operations import *
 
+# a 2-3-1 network will emulate an XOR logic gate
 model = Network(2,3,1)
+
+# training data 
 train_X = np.array([[0,0],[0,1],[1,0],[1,1]])
 train_y = np.array([[0],[1],[1],[0]])
 
