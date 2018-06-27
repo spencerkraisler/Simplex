@@ -1,10 +1,9 @@
 from SNN_objects import * 
 from SNN_operations import *
 
-# a 2-3-1 network will emulate an XOR logic gate
 model = Network(2,3,1)
 
-# training data 
+# emulating XOR logic gate
 train_X = np.array([[0,0],[0,1],[1,0],[1,1]])
 train_y = np.array([[0],[1],[1],[0]])
 
@@ -13,8 +12,12 @@ train_y = np.array([[0],[1],[1],[0]])
 # train
 for i in range(100):
 	print(i)
+	
+	# 4 possible XOR states
 	for j in range(4):
-		print(forward(model, train_X[[j]].T))
+		# train_X is in a weird way since 
+		# having every input be a column matrix would look weird imo
+		print(forward(model, train_X[[j]].T)) 
 		backpass(model, train_y, .1)
 
 

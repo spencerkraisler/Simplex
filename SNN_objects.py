@@ -1,6 +1,5 @@
 import random as rand
 
-# this file contains all the objects for the neural network
 
 class Network:
 	def __init__(self, input_dim, hidden_dim, output_dim):
@@ -12,14 +11,13 @@ class Network:
 		self.layers.append(Layer(self, self.hidden_dim, 'hidden'))
 		self.layers.append(Layer(self, self.output_dim, 'output'))
 
-	# activation function is automatically sigmoid, but it can be changed here quickly
 	def initActivationFunctions(self, input_activation, hidden_activation, output_activation):
 		self.layers.append(Layer(self, self.input_dim, 0, input_activation))
 		self.layers.append(layer(self, self.hidden_dim, 1, hidden_activation))
 		self.layers.append(Layer(self, self.output_dim, 2, output_activation))
 
 class Layer:
-	def __init__(self, network, dim, layer_type, activation = 'sigmoid', bias = 1): # the bias parameter is the value of bias
+	def __init__(self, network, dim, layer_type, activation = 'sigmoid', bias = 1):
 		self.network = network
 		self.dim = dim
 		self.layer_type = layer_type
@@ -27,10 +25,9 @@ class Layer:
 		self.bias = bias
 		self.nodes = []
 		for i in range(dim):
-			self.nodes.append(Node(self, rand.random(), self.layer_type, i, self.activation)) # nodes
-		self.nodes.append(Node(self, self.bias, 'bias', dim, 'identity')) # bias node
+			self.nodes.append(Node(self, rand.random(), self.layer_type, i, self.activation))
+		self.nodes.append(Node(self, self.bias, 'bias', dim, 'identity'))
 
-	# this value returns all the node values in a layer in a regular array
 	def getNodeValues(self):
 		node_array = []
 		if self.layer_type != 'output':
@@ -41,7 +38,6 @@ class Layer:
 				node_array.append(self.nodes[i].value)
 		return node_array
 
-	# accepts an np.array and updates all values in layer accordingly
 	def updateNodeValues(self, new_node_values_matrix):
 		for i in range(new_node_values_matrix.shape[0]):
 			if self.nodes[i].node_type != 'bias':
@@ -51,14 +47,14 @@ class Node:
 	def __init__(self, layer, value, node_type, node_index, activation):
 		self.layer = layer
 		self.value = value
-		self.node_type = node_type # either input, output, hidden, or bias
+		self.node_type = node_type
 		self.node_index = node_index
 		self.activation = activation
 
 		self.parent_weights = []
 		if (self.node_type == 'hidden'):
 			parent_layer = self.layer.network.layers[0]
-			for i in range(parent_layer.dim + 1): # the + 1 is for the bias node in the input layer
+			for i in range(parent_layer.dim + 1):
 				self.parent_weights.append(Weight(parent_layer.nodes[i], self, rand.uniform(-1,1)))
 		elif (self.node_type == 'output'):
 			parent_layer = self.layer.network.layers[1]
