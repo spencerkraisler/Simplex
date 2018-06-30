@@ -3,6 +3,7 @@
 import math
 import numpy as np 
 from scipy import linalg
+import random as rand
 
 def calc_error(network, target_values):
 	output_layer = network.layers[2]
@@ -10,7 +11,7 @@ def calc_error(network, target_values):
 	for i in range(len(target_values)):
 		total_error += 0.5 * (target_values[i] - output_layer.nodes[i].value) ** 2
 	total_error /= len(target_values)
-	return total_error
+	return total_error[0]
 
 
 def activate(x, function, prime = False):
@@ -42,9 +43,13 @@ def getNodeMatrix(layer):
 	return node_matrix
 
 def activateMatrix(X, function, prime = False):
-	for i in range(X.shape[0]):
-		for j in range(X.shape[1]):
-			X[i][j] = activate(X[i][j], function, prime)
+	if function == 'sigmoid':
+		if prime == False:
+			for i in range(X.shape[0]):
+				for j in range(X.shape[1]):
+					X[i][j] = activate(X[i][j], 'sigmoid', prime = False)
+		else:
+			X = X * (1 - X)
 	return X
 
 # takes a layer and returns a matrix of parent weight values
@@ -80,64 +85,60 @@ def appendBias(node_matrix, bias):
 	return node_matrix
 
 
+# takes a weight_matrix and returns the change in cost w.r.t change in weight 
+def get_delError(network, weight_matrix, weight_type, target_values):
+	# output
+	output_layer = network.layers[2]
+	hidden_layer = network.layers[1]
+	if weight_type == 'output':
+		output_node_matrix = getNodeMatrix(output_layer)
+		hidden_node_matrix = getNodeMatrix(hidden_layer)
+		sigma = target_values - output_node_matrix
+		sigma *= activateMatrix(output_node_matrix, 'sigmoid', prime=True)
+		sigma = sigma.dot(hidden_node_matrix.T)
+		return sigma
+	#input
+	elif weight_type == 'hidden':
+		weight_matrix = getWeightMatrix(output_layer)
+		sigma = target_values - getNodeMatrix(output_layer)
+		output_node_matrix = getNodeMatrix(output_layer)
+		sigma *= activateMatrix(output_node_matrix, 'sigmoid', prime=True)
+		sigma = (weight_matrix.T).dot(sigma)
+		hidden_node_matrix = getNodeMatrix(hidden_layer)
+		sigma *= activateMatrix(hidden_node_matrix, 'sigmoid', prime=True)
+		input_node_matrix = getNodeMatrix(network.layers[0])
+		sigma = sigma.dot(input_node_matrix.T)
+		return sigma
 
-# the following functions are designed to make backpropagation method more readable
-
-# returns the change in output w.r.t. change in net input of a node
-def get_delOut_delNet(node):
-	function = node.activation
-	value = node.value
-	return activate(value, function, prime = True)
-
-# returns the change in net input of child node w.r.t. change in output of parent node
-def get_delNet_delOut(node, parent_node):
-	return node.parent_weights[parent_node.node_index].value
-
-# returns the change in net input of a node w.r.t. change in weight value
-def get_delNet_delWeight(weight):
-	return weight.parent_node.value
-
-
-# returns the change in the error of the output node w.r.t. change in weight value
-# NOTE: returns delError of a SINGLE output node, not all output nodes
-def get_delError_delWeight(weight, output_node, target_value):
-	network = output_node.layer.network
-	del_error_del_weight = target_value - output_node.value
-	del_error_del_weight *= get_delOut_delNet(output_node)
-	del_error_del_weight *= get_delNet_delWeight(weight)
-	if weight.child_node.node_type == 'hidden':
-		del_error_del_weight *= get_delNet_delOut(output_node, weight.child_node)
-		del_error_del_weight *= get_delOut_delNet(weight.child_node)
-	return del_error_del_weight
-
-# does one iteration of 
 def backpass(network, target_values, learning_rate):
-	for i in range(network.layers[2].dim):
-		for j in range(network.layers[1].dim):
-			weight = network.layers[2].nodes[i].parent_weights[j] 
-			weight.value += learning_rate * get_delError_delWeight(weight, network.layers[2].nodes[i], target_values[i])
-	for i in range(network.layers[1].dim):
-		for j in range(network.layers[0].dim):
-			weight = network.layers[1].nodes[i].parent_weights[j]
-			delta_weight = 0
-			for k in range(network.layers[2].dim):
-				delta_weight += get_delError_delWeight(weight, network.layers[2].nodes[k], target_values[k])
-			weight.value += learning_rate * delta_weight 
+	output_layer = network.layers[2]
+	output_weight_matrix = getWeightMatrix(output_layer)
+	hidden_layer = network.layers[1]
+	hidden_weight_matrix = getWeightMatrix(hidden_layer)
+	input_layer = network.layers[0]
+
+	delta_weight = get_delError(network, output_weight_matrix, 'output', target_values)
+	for i in range(output_layer.dim):
+		for j in range(hidden_layer.dim):
+			output_layer.nodes[i].parent_weights[j].value += (delta_weight[i][j] * learning_rate)
+	
+	delta_weight = get_delError(network, hidden_weight_matrix, 'hidden', target_values)
+	for i in range(hidden_layer.dim):
+		for j in range(input_layer.dim):
+			hidden_layer.nodes[i].parent_weights[j].value += (delta_weight[i][j] * learning_rate)
 
 
-def train(network, X, Y, learning_rate = 0.1, epoch = 1000, print_log = True):
+def train(network, X, Y, epoch, learning_rate = 0.1, print_log = True):
 	for i in range(epoch):
 		cost = 0
 		for j in range(X.shape[0]):
-			forward(network,X[[j]].T)
-			backpass(network, Y[j], learning_rate)
-			cost += calc_error(network, Y[j])
-		cost /= 4
-		if print_log == True:
-			print("Epoch:", i, "Cost:", cost)
-	if print_log == True:
-		for i in range(X.shape[0]):
-			print(X[i], ":", forward(network,X[[i]].T)[0][0])
+			forward(network, X[[j]].T)
+			backpass(network, Y[[j]].T, learning_rate)
+			cost += calc_error(network, Y[[j]].T)
+		cost /= X.shape[0]
+		print("Epoch:", i, "- Error:", cost)
+	for i in range(X.shape[0]):
+		print(X[i],":", forward(network, X[[i]].T)[0][0])
 
 			
 

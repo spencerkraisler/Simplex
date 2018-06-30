@@ -4,19 +4,14 @@ from snn_objects import *
 from snn_operations import *
 import numpy as np
 
-model = Network(2,10,1)
+# create network
+model = Network(2,3,1)
 
+# training data
 X = np.array([[0,0],[0,1],[1,0],[1,1]])
-Y = np.array([[0],[1],[1],[0]])
+y = np.array([[0],[1],[1],[0]])
 
-test_weight = model.layers[1].nodes[0].parent_weights[0]
-#print(test_weight.value)
-
-
-train(model, X, Y,  1, 10000, print_log = True)
-print(forward(model, X[[0]].T))
-print(forward(model, X[[1]].T))
-print(forward(model, X[[2]].T))
-print(forward(model, X[[3]].T))
+# train
+train(model, X, y, epoch=3000, learning_rate=1)
 
 

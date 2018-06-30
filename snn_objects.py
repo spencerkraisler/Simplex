@@ -30,6 +30,7 @@ class Layer:
 		if self.biased == True:
 			self.nodes.append(Node(1.0, self, 'bias', self.dim + 1, activation = None))
 
+
 	def updateNodeValues(self, new_node_values_matrix):
 		for i in range(new_node_values_matrix.shape[0]):
 			if self.nodes[i].node_type != 'bias':
@@ -69,7 +70,6 @@ class Node:
 		for i in range(len(self.parent_weights)):
 			parent_weight_values.append(self.parent_weights[i].value)
 		return parent_weight_values
-
 
 class Weight:
 	def __init__(self, value, parent_node, child_node):
