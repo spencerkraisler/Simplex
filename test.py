@@ -1,2 +1,0 @@
-import snn_objects
-import MNIST_training_data
