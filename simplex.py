@@ -1,9 +1,23 @@
 # simplex.py
+#
+#
+# Spencer Kraisler 2018
+# 
+#
+# This file contains method and objects that create a working 3-layered sequential neural network. 
+# This file does not use node or weight objects, only layer and network objects.
+# Node and weight values are stored in numpy matrices and handled with various methods used in this file.
+# In mathematics, a simplex is the generalization of a triangle for higher dimensions.
+# (2d: triangle, 3d: tetrahedron, 4d: 4-simplex, etc.)
+# Since the number 3 is entangled in simplicies, and this is for a 3 layered network, I accepted that term as the name :)
+#
+#
 
+from scipy import linalg
 import math
 import numpy as np
-from scipy import linalg
 import random as rand
+
 
 class Network:
 	def __init__(self, input_dim, hidden_dim, output_dim):
@@ -123,13 +137,14 @@ def updateGradient(network, Y):
 		gradient = gradient.dot(input_layer.node_matrix.T)
 		hidden_layer.gradient = gradient
 
+
 def backpass(network, Y, learning_rate):
 	updateGradient(network, Y)
 	for i in range(1, len(network.layers)):
 		layer = network.layers[i]
 		layer.weight_matrix += layer.gradient * learning_rate
 
-def cost(network, X, Y):
+def cost_supervised(network, X, Y):
 	output_layer = network.layers[len(network.layers) - 1]
 	cost = 0
 	error_matrix = np.zeros((Y.shape))
